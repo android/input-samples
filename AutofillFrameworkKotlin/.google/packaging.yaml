@@ -6,7 +6,7 @@
 ---
 status:       PUBLISHED
 technologies: [Android]
-categories:   [Input, Android O Preview]
+categories:   [Input]
 languages:    [Kotlin]
 solutions:    [Mobile]
 github:       android/input
