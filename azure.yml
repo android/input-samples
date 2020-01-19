@@ -1,0 +1,3 @@
+<application android:allowTaskReparenting=["true" | "false"]
+             android:allowBackup=["true" | "false"]
+             android:allowClearUserData
