@@ -26,8 +26,9 @@ keyboards that can send rich content to any app.
 this app as a keyboard by navigating to *Settings > Languages & Input > Virtual Keyboard > Manage
 Keyboards*. This keyboard can then be accessed by pressing the virtual keyboard icon in the
 lower-right hand corner of the display while in a text field.
-Without default Activity Android Studio might not let you 'run' the application. Generating an apk
-file should work fine.
+
+Without default Activity Android Studio doesn't let you 'run' the application. Generating an apk
+file should work fine. Alternatively see [#18](https://github.com/android/input-samples/issues/18).
 
 [1]: https://android-dot-devsite.googleplex.com/preview/image-keyboard.html
 
