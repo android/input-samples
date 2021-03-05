@@ -39,7 +39,7 @@ Pre-requisites
 Screenshots
 -------------
 
-<img src="screenshots/screenshot-1.png" height="400" alt="Screenshot"/> 
+<img src="https://i.ibb.co/mXb5Lpj/Screenshot-20210306-012434.png" height="400" alt="Screenshot"/> 
 
 Getting Started
 ---------------
