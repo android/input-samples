@@ -16,8 +16,12 @@
 package com.example.lowlatencysample.ui
 
 
+import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -33,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.lowlatencysample.R
 import com.example.lowlatencysample.data.SampleInkViewModel
 
 
@@ -42,12 +47,27 @@ class SampleInkViewActivity : ComponentActivity() {
 
     private lateinit var lowLatencyRenderer: LowLatencyRenderer
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        updateOrientation()
+
+        val options = BitmapFactory.Options().apply {
+            inScaled = false
+        }
+        val brushBitmap: Bitmap =
+            BitmapFactory.decodeResource(resources, R.drawable.spray_brush, options)
+
+        // swap brushes by (un)commenting the other brush
+        val brush: Brush = BitmapBrushShader(brushBitmap).apply { size = 25f } // LineRenderer()
+
         lowLatencyRenderer = LowLatencyRenderer(
-            LineRenderer(), viewModel
+            brush,
+            viewModel
         )
+
 
         setContent {
             Box {
@@ -56,9 +76,24 @@ class SampleInkViewActivity : ComponentActivity() {
                 } else {
                     DeviceNotSupported()
                 }
-                Text("Version: 2023.03.24", modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp), color = Color.White)
+                Text("Version: 2023.05.23", modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 8.dp), color = Color.White)
             }
         }
+    }
+
+    private fun updateOrientation() {
+        val display = (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay
+
+        viewModel.orientation =  this.resources.configuration.orientation //display.rotation
+        viewModel.displayRotation =  display.rotation
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        updateOrientation()
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -68,7 +103,7 @@ class SampleInkViewActivity : ComponentActivity() {
         val lowLatencySurfaceView =
             remember(context) { LowLatencySurfaceView(context, lowLatencyRenderer) }
 
-        AndroidView(factory = { context ->
+        AndroidView(factory = {
             lowLatencySurfaceView
         })
     }

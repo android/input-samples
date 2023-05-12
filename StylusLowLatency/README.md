@@ -21,7 +21,7 @@ The word *pointer* refers to anything that can act as a pointer, such as:
 - It is appropriate for small changes to the display (extending an ink stroke) but not large changes (panning, zooming).
 - Rendering can be approximate (prediction)
 
-### Double buffered layer is used to persist the pixels
+### Multi buffered layer is used to persist the pixels
 - It operates when pointer is lifted (`ACTION_UP`)
 - Pixels are accurate, true to user input
 
@@ -37,7 +37,7 @@ We need to import `graphics-core` into our project
 📄 app/build.gradle
 
 dependencies {
-    implementation 'androidx.graphics:graphics-core:1.0.0-alpha03'
+    implementation 'androidx.graphics:graphics-core:1.0.0-alpha04'
 }
 ```
 
@@ -47,7 +47,7 @@ dependencies {
 `GLFrontBufferedRenderer` will take care of Front and Multi buffered layers. It is in charge of optimizing 
 a [SurfaceView](https://developer.android.com/reference/kotlin/android/view/SurfaceView) 
 for fast rendering at first on the Front buffered layer (onDrawFrontBufferedLayer). It then will provide data 
-for rendering Double buffered layer (onDrawDoubleBufferedLayer)
+for rendering Multi buffered layer (onDrawMultiBufferedLayer)
 
 
 ### Data points
@@ -103,7 +103,7 @@ val callbacks = object : GLFrontBufferedRenderer.Callback<DATA_TYPE> {
         // OpenGL work for Wet layer, affecting a small area of the screen
     }
 
-    override fun onDrawDoubleBufferedLayer(
+    override fun onDrawMultiBufferedLayer(
         eglManager: EGLManager,
         bufferInfo: BufferInfo,
         transform: FloatArray,
@@ -149,7 +149,7 @@ mySurfaceView.setOnTouchListener { _, event ->
 		    
 		MotionEvent.ACTION_UP -> {
 			// persist all data points
-			// triggers the callback onDrawDoubleBufferedLayer
+			// triggers the callback onDrawMultiBufferedLayer
 			frontBufferRenderer?.commit()
 		}
     }

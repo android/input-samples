@@ -16,8 +16,15 @@
 
 package com.example.lowlatencysample
 
+import androidx.graphics.opengl.GLRenderer
+
 interface DrawingManager {
-    fun saveLines(lines: Collection<FloatArray>)
+    fun saveLines(lines: FloatArray)
     fun getLines(): Collection<FloatArray>
     var isPredictionEnabled: Boolean
+    var isGLSurfaceScissorEnabled: Boolean
+    var isDebugColorEnabled: Boolean
+    var orientation: Int
+    var displayRotation: Int
+    val glRenderer: GLRenderer
 }

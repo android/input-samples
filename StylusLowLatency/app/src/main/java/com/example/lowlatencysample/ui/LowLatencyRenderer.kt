@@ -16,10 +16,15 @@
 
 package com.example.lowlatencysample.ui
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.RectF
 import android.opengl.GLES20
 import android.opengl.Matrix
 import android.view.MotionEvent
+import android.view.Surface
 import android.view.SurfaceView
 import android.view.View
 import androidx.annotation.WorkerThread
@@ -28,154 +33,417 @@ import androidx.graphics.lowlatency.GLFrontBufferedRenderer
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.input.motionprediction.MotionEventPredictor
 import com.example.lowlatencysample.DrawingManager
+import com.example.lowlatencysample.data.getIntersect
+import com.example.lowlatencysample.data.toFloatArray
+import com.example.lowlatencysample.data.toFloatArrayLineClean
+import com.example.lowlatencysample.ui.Brush.Companion.DATA_STRUCTURE_SIZE
+import com.example.lowlatencysample.ui.Brush.Companion.EVENT_TYPE
+import com.example.lowlatencysample.ui.Brush.Companion.IS_PREDICTED_EVENT
+import com.example.lowlatencysample.ui.Brush.Companion.IS_USER_EVENT
+import com.example.lowlatencysample.ui.Brush.Companion.PRESSURE
+import com.example.lowlatencysample.ui.Brush.Companion.X1_INDEX
+import com.example.lowlatencysample.ui.Brush.Companion.X2_INDEX
+import com.example.lowlatencysample.ui.Brush.Companion.Y1_INDEX
+import com.example.lowlatencysample.ui.Brush.Companion.Y2_INDEX
+import kotlin.math.ceil
+import kotlin.math.cos
+import kotlin.math.sin
+
 
 class LowLatencyRenderer(
-    private var lineRenderer: LineRenderer,
-    private val drawingManager: DrawingManager
+  private var lineRenderer: Brush,
+  private val drawingManager: DrawingManager
 ) : GLFrontBufferedRenderer.Callback<FloatArray> {
-    private val mvpMatrix = FloatArray(16)
-    private val projection = FloatArray(16)
+  private val mvpMatrix = FloatArray(16)
+  private val projection = FloatArray(16)
 
-    private var frontBufferRenderer: GLFrontBufferedRenderer<FloatArray>? = null
+  private var frontBufferRenderer: GLFrontBufferedRenderer<FloatArray>? = null
 
-    private var previousX: Float = 0f
-    private var previousY: Float = 0f
-    private var currentX: Float = 0f
-    private var currentY: Float = 0f
+  private var previousX: Float = 0f
+  private var previousY: Float = 0f
+  private var currentX: Float = 0f
+  private var currentY: Float = 0f
 
-    private var motionEventPredictor: MotionEventPredictor? = null
+  private var motionEventPredictor: MotionEventPredictor? = null
+
+  private val surfaceScissor = GLSurfaceScissor()
 
 
-    @WorkerThread // GLThread
-    private fun obtainRenderer(): LineRenderer =
-        if (lineRenderer.isInitialized) {
-            lineRenderer
+  @WorkerThread // GLThread
+  private fun obtainRenderer(): Brush =
+    if (lineRenderer.isInitialized) {
+      lineRenderer
+    } else {
+      lineRenderer
+        .apply {
+          initialize()
+          surfaceScissor.maxBrushSize = ceil(this.maxSize).toInt()
+        }
+    }
+
+  private var currentLine = mutableListOf<FloatArray>()
+
+  private val defaultStrokeColor = Color.RED
+
+  override fun onDrawFrontBufferedLayer(
+    eglManager: EGLManager,
+    bufferInfo: BufferInfo,
+    transform: FloatArray,
+    param: FloatArray
+  ) {
+    GLES20.glViewport(0, 0, bufferInfo.width, bufferInfo.height)
+    // Map Android coordinates to GL coordinates
+    Matrix.orthoM(
+      mvpMatrix,
+      0,
+      0f,
+      bufferInfo.width.toFloat(),
+      0f,
+      bufferInfo.height.toFloat(),
+      -1f,
+      1f
+    )
+
+    Matrix.multiplyMM(projection, 0, mvpMatrix, 0, transform, 0)
+
+
+    if (drawingManager.isGLSurfaceScissorEnabled && !surfaceScissor.isEmpty) {
+      // Enable scissor test.
+      GLES20.glEnable(GLES20.GL_SCISSOR_TEST)
+
+      val rectf = RectF(surfaceScissor.scissorBox)
+
+      var appyTransformation = false
+      var angle = 0f
+      val width = bufferInfo.width
+      val height = bufferInfo.height
+
+      when (drawingManager.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> {
+          when (drawingManager.displayRotation) {
+            Surface.ROTATION_0 -> {
+              angle = 0f
+            }
+            Surface.ROTATION_180 -> {
+              appyTransformation = true
+              angle = 180f
+
+            }
+            else -> {
+              throw Exception(
+                "Invalid display orientation. debug info(portrait: ${drawingManager.orientation == Configuration.ORIENTATION_PORTRAIT} / displayOrientation: ${drawingManager.displayRotation} / displayRotation: ${drawingManager.displayRotation} ${
+                  getAngle(
+                    drawingManager.displayRotation
+                  )
+                })"
+              )
+            }
+          }
+        }
+
+        Configuration.ORIENTATION_LANDSCAPE -> {
+          appyTransformation = true
+          angle = if (drawingManager.displayRotation == Surface.ROTATION_90) {
+            90f
+          } else {
+            if (drawingManager.displayRotation == Surface.ROTATION_270) {
+              -90f
+            } else {
+              90f
+            }
+          }
+        }
+        else -> Unit
+      }
+
+      val x = (width / 2f)
+      val y = (height / 2f)
+
+      if (appyTransformation) { // apply some transformation depending on the orientation of the device
+        val matrixTransform = android.graphics.Matrix()
+        matrixTransform.setRotate(angle, x, y)
+        matrixTransform.mapRect(rectf)
+
+        val matrixTransform2 = android.graphics.Matrix()
+        val move = if (drawingManager.orientation == Configuration.ORIENTATION_PORTRAIT) {
+          0f
+        } else if (drawingManager.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+          if(drawingManager.displayRotation == Surface.ROTATION_270) {
+            (height - width) / 2f
+          } else if(drawingManager.displayRotation == Surface.ROTATION_90) {
+            (width - height) / 2f
+          } else {
+            0f
+          }
         } else {
-            lineRenderer
-                .apply {
-                    initialize()
-                }
+          0f
         }
 
+        matrixTransform2.setTranslate(move, move)
+        matrixTransform2.mapRect(rectf)
+      } else if (drawingManager.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        val matrixTransform = android.graphics.Matrix()
+        matrixTransform.setRotate(angle, x, y)
+        matrixTransform.mapRect(rectf)
+      }
 
-    override fun onDrawFrontBufferedLayer(
-        eglManager: EGLManager,
-        bufferInfo: BufferInfo,
-        transform: FloatArray,
-        param: FloatArray
-    ) {
-        GLES20.glViewport(0, 0, bufferInfo.width, bufferInfo.height)
-        // Map Android coordinates to GL coordinates
-        Matrix.orthoM(
-            mvpMatrix,
-            0,
-            0f,
-            bufferInfo.width.toFloat(),
-            0f,
-            bufferInfo.height.toFloat(),
-            -1f,
-            1f
+      val rect = Rect()
+      rect.left = rectf.left.toInt()
+      rect.top = rectf.top.toInt()
+      rect.right = rectf.right.toInt()
+      rect.bottom = rectf.bottom.toInt()
+
+
+      GLES20.glScissor(
+        rect.left,
+        rect.top,
+        rect.width(),
+        rect.height(),
+      )
+
+      if (drawingManager.isDebugColorEnabled) {
+        //Clear the color buffer with RED
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f)
+      } else {
+        //Clear the color buffer with BLACK
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
+      }
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
+      // redraw all the lines within the work area
+      val scissorRectInflated = Rect(surfaceScissor.scissorBox).apply {
+        this.left -= surfaceScissor.maxBrushSize
+        this.top -= surfaceScissor.maxBrushSize
+        this.right += surfaceScissor.maxBrushSize
+        this.bottom += surfaceScissor.maxBrushSize
+      }
+
+      val rx = scissorRectInflated.left.toFloat()
+      val ry = scissorRectInflated.top.toFloat()
+      val rw = scissorRectInflated.width().toFloat()
+      val rh = scissorRectInflated.height().toFloat()
+      for (line in drawingManager.getLines()) {
+        val subline = line.getIntersect(rx, ry, rw, rh)
+        if (subline.isNotEmpty()) {
+          obtainRenderer().drawLines(
+            projection, subline,
+            if (drawingManager.isDebugColorEnabled) {
+              Color.YELLOW
+            } else {
+              defaultStrokeColor
+            }
+          )
+        }
+      }
+
+      val currentLineExtended = currentLine.toMutableList()
+      currentLineExtended.add(param)
+
+      val currentSubline = currentLineExtended.toFloatArray().getIntersect(rx, ry, rw, rh)
+      if (currentSubline.isNotEmpty()) {
+        obtainRenderer().drawLines(
+          projection, currentSubline,
+          if (drawingManager.isDebugColorEnabled) {
+            Color.MAGENTA
+          } else {
+            defaultStrokeColor
+          }
         )
+      }
 
-        Matrix.multiplyMM(projection, 0, mvpMatrix, 0, transform, 0)
-
-        obtainRenderer().drawLines(projection, param, Color.GREEN, false)
+      // Disable the scissors
+      GLES20.glDisable(GLES20.GL_SCISSOR_TEST)
+    } else {
+      // render current line
+      obtainRenderer().drawLines(projection, param, defaultStrokeColor)
     }
 
-    override fun onDrawDoubleBufferedLayer(
-        eglManager: EGLManager,
-        bufferInfo: BufferInfo,
-        transform: FloatArray,
-        params: Collection<FloatArray>
-    ) {
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+    // we want to keep only the user event for the current line as well.
+    if (param[EVENT_TYPE] == IS_USER_EVENT) {
+      currentLine.add(param)
+    }
 
-        GLES20.glViewport(0, 0, bufferInfo.width, bufferInfo.height)
-        Matrix.orthoM(
-            mvpMatrix,
-            0,
-            0f,
-            bufferInfo.width.toFloat(),
-            0f,
-            bufferInfo.height.toFloat(),
-            -1f,
-            1f
-        )
+  }
 
-        Matrix.multiplyMM(projection, 0, mvpMatrix, 0, transform, 0)
+  fun getAngle(rotation: Int): Float {
+    return when (rotation) {
+      Surface.ROTATION_90 -> 90f
+      Surface.ROTATION_180 -> 180f
+      Surface.ROTATION_270 -> 270f
+      else -> 0f
+    }
+  }
 
-        drawingManager.saveLines(params)
+  override fun onDrawMultiBufferedLayer(
+    eglManager: EGLManager,
+    bufferInfo: BufferInfo,
+    transform: FloatArray,
+    params: Collection<FloatArray>
+  ) {
+    currentLine.clear()
+    GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        for (line in drawingManager.getLines()) {
-            obtainRenderer().drawLines(projection, line, Color.WHITE, true)
+    GLES20.glViewport(0, 0, bufferInfo.width, bufferInfo.height)
+    Matrix.orthoM(
+      mvpMatrix,
+      0,
+      0f,
+      bufferInfo.width.toFloat(),
+      0f,
+      bufferInfo.height.toFloat(),
+      -1f,
+      1f
+    )
+
+    Matrix.multiplyMM(projection, 0, mvpMatrix, 0, transform, 0)
+
+    val fla = params.toFloatArrayLineClean()
+    drawingManager.saveLines(fla)
+
+    for (line in drawingManager.getLines()) {
+      obtainRenderer().drawLines(projection, line, defaultStrokeColor)
+    }
+  }
+
+  fun attachSurfaceView(surfaceView: SurfaceView) {
+    frontBufferRenderer = GLFrontBufferedRenderer(surfaceView, this, drawingManager.glRenderer)
+    motionEventPredictor = MotionEventPredictor.newInstance(surfaceView)
+  }
+
+  fun release() {
+    frontBufferRenderer?.release(true)
+    {
+      obtainRenderer().release()
+    }
+  }
+
+  @SuppressLint("ClickableViewAccessibility")
+  val onTouchListener = View.OnTouchListener { view, event ->
+    motionEventPredictor?.record(event)
+
+    when (event?.action) {
+      MotionEvent.ACTION_DOWN -> {
+        // Ask that the input system not batch MotionEvents
+        // but instead deliver them as soon as they're available
+        view.requestUnbufferedDispatch(event)
+        surfaceScissor.reset()
+        currentX = event.x
+        currentY = event.y
+
+        val line = FloatArray(DATA_STRUCTURE_SIZE).apply {
+          this[X1_INDEX] = currentX
+          this[Y1_INDEX] = currentY
+          this[X2_INDEX] = currentX
+          this[Y2_INDEX] = currentY
+          // Helps differentiate between User and Predicted events
+          this[EVENT_TYPE] = IS_USER_EVENT
+          this[PRESSURE] = event.pressure
         }
-    }
 
-    fun attachSurfaceView(surfaceView: SurfaceView) {
-        frontBufferRenderer = GLFrontBufferedRenderer(surfaceView, this)
-        motionEventPredictor = MotionEventPredictor.newInstance(surfaceView)
-    }
+        // Send the short line to front buffered layer: fast rendering
+        frontBufferRenderer?.renderFrontBufferedLayer(line)
+      }
 
-    fun release() {
-        frontBufferRenderer?.release(true)
-        {
-            obtainRenderer().release()
+      MotionEvent.ACTION_MOVE -> {
+        surfaceScissor.reset()
+        if (previousX != 0f && previousY != 0f) {
+          surfaceScissor.addPoint(previousX, previousY)
         }
-    }
+        // add new points to surfaceScissor
+        surfaceScissor.addPoint(currentX, currentY)
 
-    val onTouchListener = View.OnTouchListener { view, event ->
-        motionEventPredictor?.record(event)
+        previousX = currentX
+        previousY = currentY
+        currentX = event.x
+        currentY = event.y
 
-        when (event?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                // Ask that the input system not batch MotionEvents
-                // but instead deliver them as soon as they're available
-                view.requestUnbufferedDispatch(event)
-
-                currentX = event.x
-                currentY = event.y
-            }
-            MotionEvent.ACTION_MOVE -> {
-                previousX = currentX
-                previousY = currentY
-                currentX = event.x
-                currentY = event.y
-
-                val line = FloatArray(LineRenderer.DATA_STRUCTURE_SIZE).apply {
-                    this[LineRenderer.X1_INDEX] = previousX
-                    this[LineRenderer.Y1_INDEX] = previousY
-                    this[LineRenderer.X2_INDEX] = currentX
-                    this[LineRenderer.Y2_INDEX] = currentY
-                    // Helps differentiate between User and Predicted events
-                    this[LineRenderer.EVENT_TYPE] = LineRenderer.IS_USER_EVENT
-                }
-                // Send the short line to front buffered layer: fast rendering
-                frontBufferRenderer?.renderFrontBufferedLayer(line)
-
-                if (drawingManager.isPredictionEnabled) {
-                    motionEventPredictor?.predict()?.let {
-                        val predictedLine = FloatArray(LineRenderer.DATA_STRUCTURE_SIZE).apply {
-                            this[LineRenderer.X1_INDEX] = currentX
-                            this[LineRenderer.Y1_INDEX] = currentY
-                            this[LineRenderer.X2_INDEX] = it.x
-                            this[LineRenderer.Y2_INDEX] = it.y
-                            // Helps differentiate between User and Predicted events
-                            this[LineRenderer.EVENT_TYPE] = LineRenderer.IS_PREDICTED_EVENT
-                        }
-
-                        // Send the predicted next line to front buffered layer: faster rendering
-                        frontBufferRenderer?.renderFrontBufferedLayer(predictedLine)
-                    }
-                }
-            }
-            MotionEvent.ACTION_CANCEL -> {
-                frontBufferRenderer?.commit()
-            }
-            MotionEvent.ACTION_UP -> {
-                frontBufferRenderer?.commit()
-            }
+        val line = FloatArray(DATA_STRUCTURE_SIZE).apply {
+          this[X1_INDEX] = previousX
+          this[Y1_INDEX] = previousY
+          this[X2_INDEX] = currentX
+          this[Y2_INDEX] = currentY
+          // Helps differentiate between User and Predicted events
+          this[EVENT_TYPE] = IS_USER_EVENT
+          this[PRESSURE] = event.pressure
         }
-        true
+
+        // add new points to surfaceScissor
+        surfaceScissor.addPoint(currentX, currentY)
+
+        // Send the short line to front buffered layer: fast rendering
+        frontBufferRenderer?.renderFrontBufferedLayer(line)
+
+        if (drawingManager.isPredictionEnabled) {
+          val predictedMotionEvent = motionEventPredictor?.predict()
+          if (predictedMotionEvent != null) {
+            val predictedLine = FloatArray(DATA_STRUCTURE_SIZE).apply {
+              this[X1_INDEX] = currentX
+              this[Y1_INDEX] = currentY
+              this[X2_INDEX] = predictedMotionEvent.x
+              this[Y2_INDEX] = predictedMotionEvent.y
+              // Helps differentiate between User and Predicted events
+              this[EVENT_TYPE] = IS_PREDICTED_EVENT
+              this[PRESSURE] = event.pressure
+            }
+
+            surfaceScissor.addPoint(predictedMotionEvent.x, predictedMotionEvent.y)
+
+            // Send the predicted next line to front buffered layer: faster rendering
+            frontBufferRenderer?.renderFrontBufferedLayer(predictedLine)
+          }
+        }
+      }
+
+      MotionEvent.ACTION_CANCEL -> {
+        previousX = 0f
+        previousY = 0f
+        surfaceScissor.reset()
+        frontBufferRenderer?.commit()
+      }
+
+      MotionEvent.ACTION_UP -> {
+        previousX = 0f
+        previousY = 0f
+        surfaceScissor.reset()
+        frontBufferRenderer?.commit()
+      }
     }
+    true
+  }
+}
+
+fun rotatePoint(point: FloatArray, origin: FloatArray, angle: Double): FloatArray {
+  val radAngle = (angle * Math.PI) / 180f
+
+  val cosAngle = cos(radAngle)
+  val sinAngle = sin(radAngle)
+
+  val x = point[0]
+  val y = point[1]
+
+  val orignX = origin[0]
+  val orignY = origin[1]
+
+  val nx = cosAngle * (x - orignX) - sinAngle * (y - orignY) + orignX
+  val ny = sinAngle * (x - orignX) + cosAngle * (y - orignY) + orignY
+
+  return floatArrayOf(nx.toFloat(), ny.toFloat())
+
+}
+
+fun Int.colorToFloatArray(): FloatArray {
+  val colorFA = FloatArray(4)
+  return this.colorToFloatArray(colorFA)
+}
+
+fun Int.colorToFloatArray(colorFA: FloatArray): FloatArray {
+  if (colorFA.size < 4) {
+    throw ArrayIndexOutOfBoundsException("colorFA must be size 4 (RGBA) or more")
+  }
+  colorFA[0] = (this shr 16 and 0xFF) / 255.0f
+  colorFA[1] = (this shr 8 and 0xFF) / 255.0f
+  colorFA[2] = (this and 0xFF) / 255.0f
+  colorFA[3] = (this shr 24 and 0xFF) / 255.0f
+  return colorFA
 }
