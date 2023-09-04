@@ -143,8 +143,6 @@ public class SettingsActivity extends AppCompatActivity {
                 mPreferences.setLoggingLevel(Util.LogLevel.Debug);
             } else if (checkedId == R.id.loggingVerbose) {
                 mPreferences.setLoggingLevel(Util.LogLevel.Verbose);
-            } else {
-                throw new IllegalStateException("Unexpected value: " + checkedId);
             }
         });
         RadioGroup dalCheckRequirementContainer = findViewById(R.id.dalCheckRequirementContainer);
