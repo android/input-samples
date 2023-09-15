@@ -15,8 +15,12 @@
 */
 package com.example.lowlatencysample.data
 
-import com.example.lowlatencysample.ui.Brush
+import com.example.lowlatencysample.brush.Brush
 
+/**
+ * WARNING: this is not performance optimized
+ * For demonstration only
+ */
 
 
 /**
@@ -167,6 +171,14 @@ fun FloatArray.getIntersect(rx: Float,
                             ry: Float,
                             rw: Float,
                             rh: Float): FloatArray {
+
+    return this.getIntersectSublines(rx, ry, rw, rh).toFloatArrayLineClean()
+}
+
+fun FloatArray.getIntersectSublines(rx: Float,
+                            ry: Float,
+                            rw: Float,
+                            rh: Float): List<FloatArray> {
     val floatArrayList = mutableListOf<FloatArray>()
 
     for (i in this.indices step Brush.DATA_STRUCTURE_SIZE) {
@@ -174,6 +186,8 @@ fun FloatArray.getIntersect(rx: Float,
         val y1 = this[i + Brush.Y1_INDEX]
         val x2 = this[i + Brush.X2_INDEX]
         val y2 = this[i + Brush.Y2_INDEX]
+        val pressure = this[i + Brush.PRESSURE]
+        val eventtype = this[i + Brush.EVENT_TYPE]
 
         if(lineInOrIntersectRect(x1,
                 y1,
@@ -189,10 +203,10 @@ fun FloatArray.getIntersect(rx: Float,
                 y1,
                 x2,
                 y2,
-                Brush.IS_USER_EVENT,
-                this[i + Brush.PRESSURE]
+                eventtype,
+                pressure
             ))
         }
     }
-    return floatArrayList.toFloatArrayLineClean()
+    return floatArrayList
 }

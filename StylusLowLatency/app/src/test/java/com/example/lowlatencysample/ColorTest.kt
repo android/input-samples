@@ -16,7 +16,7 @@
 package com.example.lowlatencysample
 
 import android.graphics.Color
-import com.example.lowlatencysample.ui.toFloatArray
+import com.example.lowlatencysample.brush.toFloatArray
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

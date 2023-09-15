@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-package com.example.lowlatencysample.ui
+package com.example.lowlatencysample.brush
 
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -24,10 +24,11 @@ import android.opengl.GLES20
 import android.opengl.GLException
 import android.opengl.GLUtils
 import android.util.Log
-import com.example.lowlatencysample.ui.Brush.Companion.DATA_STRUCTURE_SIZE
-import com.example.lowlatencysample.ui.Brush.Companion.PRESSURE
-import com.example.lowlatencysample.ui.Brush.Companion.X1_INDEX
-import com.example.lowlatencysample.ui.Brush.Companion.Y1_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.DATA_STRUCTURE_SIZE
+import com.example.lowlatencysample.brush.Brush.Companion.PRESSURE
+import com.example.lowlatencysample.brush.Brush.Companion.X1_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.Y1_INDEX
+import com.example.lowlatencysample.ui.colorToFloatArray
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import javax.microedition.khronos.opengles.GL10
@@ -43,7 +44,7 @@ import kotlin.math.min
  */
 class BitmapBrushShader(
     private val bitmapBrush: Bitmap,
-) : Brush {
+) : GLBrush {
     // Shader programs and variable handles
 
     override var isInitialized = false

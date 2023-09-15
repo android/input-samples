@@ -21,7 +21,7 @@ import android.graphics.Rect
  * Used to calculate the damaged area during an ink stroke. This allows for incremental rendering
  * and lower latency. Will be used as a glScissor.
  */
-class GLSurfaceScissor(var maxBrushSize: Int = 70) {
+class SurfaceScissor(var maxBrushSize: Int = 70) {
 
     private val mScissorBox: Rect = Rect()
     private var mEmpty: Boolean = false

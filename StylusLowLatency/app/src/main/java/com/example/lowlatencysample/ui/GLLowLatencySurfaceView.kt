@@ -19,9 +19,10 @@ import android.content.Context
 import android.os.Build
 import android.view.SurfaceView
 import androidx.annotation.RequiresApi
+import com.example.lowlatencysample.brush.Brush
 
 @RequiresApi(Build.VERSION_CODES.Q)
-class LowLatencySurfaceView(context: Context, private val lowLatencyRenderer: LowLatencyRenderer) :
+class GLLowLatencySurfaceView(context: Context, private val lowLatencyRenderer: LowLatencyRenderer<Brush>) :
     SurfaceView(context) {
 
     init {

@@ -13,16 +13,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.example.lowlatencysample.ui
+package com.example.lowlatencysample.brush
 
 import android.graphics.Color
 import android.opengl.GLES20
 import android.util.Log
-import com.example.lowlatencysample.ui.Brush.Companion.DATA_STRUCTURE_SIZE
-import com.example.lowlatencysample.ui.Brush.Companion.X1_INDEX
-import com.example.lowlatencysample.ui.Brush.Companion.X2_INDEX
-import com.example.lowlatencysample.ui.Brush.Companion.Y1_INDEX
-import com.example.lowlatencysample.ui.Brush.Companion.Y2_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.DATA_STRUCTURE_SIZE
+import com.example.lowlatencysample.brush.Brush.Companion.X1_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.X2_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.Y1_INDEX
+import com.example.lowlatencysample.brush.Brush.Companion.Y2_INDEX
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -32,7 +32,7 @@ import kotlin.math.min
 /**
  * OpenGL Renderer class responsible for drawing lines
  */
-class LineRenderer : Brush {
+class LineGLBrushRenderer : GLBrush {
 
     override var isInitialized = false
     private var vertexShader: Int = -1
@@ -174,7 +174,7 @@ class LineRenderer : Brush {
 
 
                 } catch (e: Exception) {
-                    Log.e(LineRenderer.TAG, "ERROR with data", e)
+                    Log.e(TAG, "ERROR with data", e)
                     e.printStackTrace()
                 }
             }

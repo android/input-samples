@@ -16,9 +16,9 @@
 package com.example.lowlatencysample
 
 import com.example.lowlatencysample.data.toFloatArrayLineClean
-import com.example.lowlatencysample.ui.Brush.Companion.DATA_STRUCTURE_SIZE
-import com.example.lowlatencysample.ui.Brush.Companion.IS_PREDICTED_EVENT
-import com.example.lowlatencysample.ui.Brush.Companion.IS_USER_EVENT
+import com.example.lowlatencysample.brush.Brush.Companion.DATA_STRUCTURE_SIZE
+import com.example.lowlatencysample.brush.Brush.Companion.IS_PREDICTED_EVENT
+import com.example.lowlatencysample.brush.Brush.Companion.IS_USER_EVENT
 import com.example.lowlatencysample.ui.rotatePoint
 import org.junit.Assert
 import org.junit.Test

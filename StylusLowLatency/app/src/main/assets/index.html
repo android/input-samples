@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Low-latency sample</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      #can {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "ml-matrix": "https://unpkg.com/ml-matrix?module"
+        }
+      }
+    </script>
+</head>
+<body style="background-color: black;" >
+<canvas id="can" width="800" height="600"></canvas>
+
+
+
+<script type="application/javascript">
+var canvas, ctx, flag = false,
+        prevX = 0,
+        currX = 0,
+        prevY = 0,
+        currY = 0,
+        dot_flag = false;
+
+        var inkColor = "white";
+
+
+
+
+       function init() {
+        canvas = document.getElementById('can');
+        console.log("init canvas");
+        ctx = canvas.getContext("2d");
+        w = canvas.width;
+        h = canvas.height;
+
+        console.log("canvas size: "+w+" " +h );
+
+        canvas.addEventListener("mousemove", function (e) {
+            console.log("mouse move");
+            findxy('move', e)
+        }, false);
+        canvas.addEventListener("touchmove", function (e) {
+            console.log("touch move");
+            findxy('touchmove', e);
+            findxy('move', e)
+        }, false);
+
+        canvas.addEventListener("mousedown", function (e) {
+            console.log("mouse down");
+            findxy('down', e)
+        }, false);
+        canvas.addEventListener("touchdown", function (e) {
+            console.log("touch down");
+            findxy('down', e)
+        }, false);
+
+        canvas.addEventListener("mouseup", function (e) {
+            console.log("mouse up");
+            findxy('up', e)
+        }, false);
+        canvas.addEventListener("touchup", function (e) {
+            console.log("touch up");
+            findxy('up', e)
+        }, false);
+
+        canvas.addEventListener("mouseout", function (e) {
+            findxy('out', e)
+        }, false);
+        canvas.addEventListener("touchout", function (e) {
+            console.log("touch up");
+            findxy('out', e)
+        }, false);
+    }
+
+
+    function drawLine(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = inkColor;
+        ctx.lineWidth = 15;
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function draw() {
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.strokeStyle = inkColor;
+        ctx.lineWidth = 20;
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+
+    function findxy(res, e) {
+        if (res == 'down' || (res == 'touchmove' && !flag)) {
+            prevX = currX;
+            prevY = currY;
+            currX = e.clientX - canvas.offsetLeft;
+            currY = e.clientY - canvas.offsetTop;
+
+            flag = true;
+            dot_flag = true;
+            if (dot_flag) {
+                ctx.beginPath();
+                ctx.fillStyle = inkColor;
+                ctx.fillRect(currX, currY, 2, 2);
+                ctx.closePath();
+                dot_flag = false;
+            }
+        }
+
+        if (res == 'up' || res == "out") {
+            flag = false;
+        }
+        if (res == 'move' || res == 'touchmove') {
+            if (flag) {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+                draw();
+            }
+        }
+    }
+
+    init();
+
+    </script>
+</body>
+
+</html>

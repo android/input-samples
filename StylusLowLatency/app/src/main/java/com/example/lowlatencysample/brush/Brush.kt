@@ -13,16 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.example.lowlatencysample.ui
+package com.example.lowlatencysample.brush
+
+import android.graphics.Canvas
 
 interface Brush {
-    fun initialize()
-    var isInitialized: Boolean
-    fun drawLines(
-        mvpMatrix: FloatArray,
-        lines: FloatArray,
-        color: Int
-    )
 
     fun release()
 
@@ -51,4 +46,19 @@ interface Brush {
         const val IS_USER_EVENT = 0.0f
         const val IS_PREDICTED_EVENT = 1.0f
     }
+}
+
+interface GLBrush: Brush {
+
+    fun initialize()
+    var isInitialized: Boolean
+    fun drawLines(
+        mvpMatrix: FloatArray,
+        lines: FloatArray,
+        color: Int
+    )
+}
+
+interface CanvasBrush: Brush {
+    fun render(canvas: Canvas, lines: FloatArray, color: Int)
 }

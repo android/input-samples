@@ -242,3 +242,11 @@ We recommend you “mark” those events so that they are only used for fast ren
 In this sample app we use `IS_USER_EVENT` and `IS_PREDICTED_EVENT`, 
 
 
+# Testing
+## Simulate stylus
+it is possible to set simulate stylus input on a **rooted** device/emulator with the following commands:
+```agsl
+adb root
+adb shell setprop persist.debug.input.simulate_stylus_with_touch true
+adb reboot
+```

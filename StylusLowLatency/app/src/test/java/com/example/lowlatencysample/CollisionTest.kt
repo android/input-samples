@@ -18,9 +18,11 @@ package com.example.lowlatencysample
 import com.example.lowlatencysample.data.lineInOrIntersectRect
 import com.example.lowlatencysample.data.lineLineIntersection
 import com.example.lowlatencysample.data.lineRectIntersection
+import com.example.lowlatencysample.data.pointInRect
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.system.measureTimeMillis
 
 class CollisionTest {
 
@@ -196,5 +198,14 @@ class CollisionTest {
         assertFalse("Line outside rectangle", result2)
     }
 
-
+    @Test
+    fun pointInRectTest() {
+        assertTrue(pointInRect(10f, 10f, 10f, 10f, 30f, 30f))
+        assertTrue(pointInRect(11f, 11f, 10f, 10f, 30f, 30f))
+        assertTrue(pointInRect(30f, 30f, 10f, 10f, 30f, 30f))
+        assertFalse(pointInRect(1f, 1f, 10f, 10f, 30f, 30f))
+        assertFalse(pointInRect(41f, 41f, 10f, 10f, 30f, 30f))
+        assertFalse(pointInRect(10f, 42f, 10f, 10f, 30f, 30f))
+        assertFalse(pointInRect(42f, 10f, 10f, 10f, 30f, 30f))
+    }
 }

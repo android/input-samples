@@ -22,7 +22,7 @@ interface DrawingManager {
     fun saveLines(lines: FloatArray)
     fun getLines(): Collection<FloatArray>
     var isPredictionEnabled: Boolean
-    var isGLSurfaceScissorEnabled: Boolean
+    var isSurfaceScissorEnabled: Boolean
     var isDebugColorEnabled: Boolean
     var orientation: Int
     var displayRotation: Int
