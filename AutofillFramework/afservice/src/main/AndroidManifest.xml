@@ -15,6 +15,7 @@
     -->
         <service
             android:name=".MyAutofillService"
+            android:exported="false"
             android:label="Multi-Dataset Autofill Service"
             android:permission="android.permission.BIND_AUTOFILL_SERVICE">
             <meta-data
@@ -37,6 +38,7 @@
 
         <service
             android:name=".simple.DebugService"
+            android:exported="false"
             android:label="Debug Autofill Service"
             android:permission="android.permission.BIND_AUTOFILL_SERVICE">
             <meta-data
@@ -49,6 +51,7 @@
 
         <service
             android:name=".simple.MultiStepsService"
+            android:exported="false"
             android:label="Multiple-steps Service"
             android:permission="android.permission.BIND_AUTOFILL_SERVICE">
             <intent-filter>
