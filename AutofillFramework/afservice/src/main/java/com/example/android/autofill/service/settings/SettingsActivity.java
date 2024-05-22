@@ -137,16 +137,12 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
         }
         loggingLevelContainer.setOnCheckedChangeListener((group, checkedId) -> {
-            switch (checkedId) {
-                case R.id.loggingOff:
-                    mPreferences.setLoggingLevel(Util.LogLevel.Off);
-                    break;
-                case R.id.loggingDebug:
-                    mPreferences.setLoggingLevel(Util.LogLevel.Debug);
-                    break;
-                case R.id.loggingVerbose:
-                    mPreferences.setLoggingLevel(Util.LogLevel.Verbose);
-                    break;
+            if (checkedId == R.id.loggingOff) {
+                mPreferences.setLoggingLevel(Util.LogLevel.Off);
+            } else if (checkedId == R.id.loggingDebug) {
+                mPreferences.setLoggingLevel(Util.LogLevel.Debug);
+            } else if (checkedId == R.id.loggingVerbose) {
+                mPreferences.setLoggingLevel(Util.LogLevel.Verbose);
             }
         });
         RadioGroup dalCheckRequirementContainer = findViewById(R.id.dalCheckRequirementContainer);
@@ -163,16 +159,12 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
         }
         dalCheckRequirementContainer.setOnCheckedChangeListener((group, checkedId) -> {
-            switch (checkedId) {
-                case R.id.dalDisabled:
-                    mPreferences.setDalCheckRequired(Disabled);
-                    break;
-                case R.id.dalLoginOnly:
-                    mPreferences.setDalCheckRequired(LoginOnly);
-                    break;
-                case R.id.dalAllUrls:
-                    mPreferences.setDalCheckRequired(AllUrls);
-                    break;
+            if (checkedId == R.id.dalDisabled) {
+                mPreferences.setDalCheckRequired(Disabled);
+            } else if (checkedId == R.id.dalLoginOnly) {
+                mPreferences.setDalCheckRequired(LoginOnly);
+            } else if (checkedId == R.id.dalAllUrls) {
+                mPreferences.setDalCheckRequired(AllUrls);
             }
         });
     }
