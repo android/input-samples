@@ -7,6 +7,8 @@ List<String> dirs = [
         'main']     // main sample code; look here for the interesting stuff.
 
 android {
+    namespace 'com.example.android.autofill.app'
+
     compileSdkVersion 28
 
     defaultConfig {
