@@ -16,4 +16,5 @@ apiRefs:
     - android:android.view.View
     - android:android.service.autofill.AutoFillService
     - android:android.view.autofill.AutoFillManager
-license: apache2
+license: apache4
+
