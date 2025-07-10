@@ -1,6 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
+    namespace 'com.example.android.autofill.service'
+
     compileSdkVersion 28
 
     defaultConfig {
