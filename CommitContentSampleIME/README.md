@@ -39,14 +39,14 @@ Pre-requisites
 Screenshots
 -------------
 
-<img src="screenshots/screenshot-1.png" height="400" alt="Screenshot"/> 
+<img src="screenshots/screescreenshot-nshot-1.png" height="400" alt="Screenshot"/> 
 
 Getting Started
 ---------------
 
 This sample uses the Gradle build system. To build this project, use the
 "gradlew build" command or use "Import Project" in Android Studio.
-
+screenshot-
 Support
 -------
 
